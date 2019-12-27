@@ -16,4 +16,9 @@ public class Not implements Logic {
     public List<Logic> ch() {
         return ch;
     }
+
+    @Override
+    public String toString() {
+        return "Not";
+    }
 }

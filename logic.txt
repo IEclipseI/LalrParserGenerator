@@ -13,6 +13,6 @@ xor {Logic} -> xor XOR and {new Xor($0, $2)};
 xor {Logic} -> and {$0};
 and {Logic} -> and AND var {new And($0, $2)};
 and {Logic} -> var {$0};
-var {Logic} -> VAR {new Var()};
+var {Logic} -> VAR {new Var($0)};
 var {Logic} -> NOT var {new Not($1)};
 var {Logic} -> LP or RP {$1};

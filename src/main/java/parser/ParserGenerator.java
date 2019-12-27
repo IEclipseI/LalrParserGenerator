@@ -24,12 +24,6 @@ import static parser.Table.generateTable;
 
 
 public class ParserGenerator {
-    public static void main(String[] args) {
-//        generateParser("add.txt", "Add");
-//        Integer parse = ParserAdd.parse("3+2+1");
-//        System.out.println(parse);
-    }
-
     List<Function<List<Object>, Object>> o = List.of(l -> 2);
 
     @SneakyThrows

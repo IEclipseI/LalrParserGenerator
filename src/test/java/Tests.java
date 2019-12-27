@@ -24,6 +24,6 @@ public class Tests {
     public void t2() {
 //        TreeVisualizator.show(ParserLogic.parse("a|a|a|a"));
 //        TreeVisualizator.show(ParserLogic.parse("a|a&b|a|a"));
-        TreeVisualizator.show(ParserLogic.parse("a|a&b|!(a|a)|c"));
+        TreeVisualizator.show(ParserLogic.parse("a|a&b|!(a|a)|(c^d^b)&e^w"));
     }
 }
