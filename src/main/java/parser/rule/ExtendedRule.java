@@ -9,8 +9,8 @@ import java.util.List;
 public class ExtendedRule extends Rule {
     public int curDotPos;
 
-    public ExtendedRule(int ind, Node left, List<Node> right, int curDotPos) {
-        super(ind, left, right);
+    public ExtendedRule(int ind, Node left, List<Node> right, int curDotPos, String action, String type) {
+        super(ind, left, right, action, type);
         this.curDotPos = curDotPos;
     }
 
@@ -20,14 +20,14 @@ public class ExtendedRule extends Rule {
     }
 
     public ExtendedRule(Rule rule) {
-        super(rule.ind, rule.left, rule.right);
+        super(rule.ind, rule.left, rule.right, rule.action, rule.type);
         this.curDotPos = 0;
     }
 
     public ExtendedRule acceptNode(Node node) {
         if (curDotPos != right.size()) {
             if (right.get(curDotPos).equals(node)) {
-                return new ExtendedRule(ind, left, right, curDotPos++);
+                return new ExtendedRule(ind, left, right, curDotPos++, action, type);
             } else {
                 return null;
             }

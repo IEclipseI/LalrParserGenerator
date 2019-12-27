@@ -1,5 +1,6 @@
+package example.add;
 import lombok.Value;
-import parser.node.Node;
+import parser.node.TypedNode;
 import util.Pair;
 
 import java.util.ArrayDeque;
@@ -8,16 +9,18 @@ import java.util.Queue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class LexerPrim {
+public class LexerAdd {
     List<Pair<String, String>> terminals = List.of(
-            new Pair<>("ARK", "ARK"),
-new Pair<>("EQ", "EQ"),
-new Pair<>("X", "X")
+        new Pair<>("ADD", "\\+"),
+        new Pair<>("SUB", "-"),
+        new Pair<>("MUL", "\\*"),
+        new Pair<>("LP", "\\("),
+        new Pair<>("RP", "\\)"),
+        new Pair<>("NUM", "[0-9]+")
     );
 
-    public Queue<Node> tokens(String input1) {
-        Queue<Node> queue = new ArrayDeque<>();
-        StringView input = new StringView(input1, 0, input1.length());
+    public Queue<TypedNode> tokens(String input) {
+        Queue<TypedNode> queue = new ArrayDeque<>();
         int pos = 0;
 
         while (input.length() != 0) {
@@ -26,18 +29,18 @@ new Pair<>("X", "X")
                 Matcher matcher = pattern.matcher(input);
                 if (matcher.find()) {
                     pos = matcher.end();
-                    queue.add(new Node(terminal.getKey()));
+                    queue.add(new TypedNode(terminal.getKey(), matcher.group(), ""));
                     break;
                 }
             }
             if (pos == 0) {
                 throw new IllegalArgumentException("mda");
             } else {
-                input = new StringView(input.str, input.from + pos, input.str.length());
+                input = input.substring(pos);
             }
             pos = 0;
         }
-        queue.add(new Node("END"));
+        queue.add(new TypedNode("END", "", ""));
         return queue;
     }
 

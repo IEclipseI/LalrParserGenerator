@@ -1,4 +1,0 @@
-NUMBER: "[0-9]";
-
-start -> num;
-num -> NUMBER NUMBER;

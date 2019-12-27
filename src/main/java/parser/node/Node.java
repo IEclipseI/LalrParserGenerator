@@ -4,11 +4,13 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
+import java.io.Serializable;
+
 
 @Data
 @EqualsAndHashCode
 @AllArgsConstructor
-public class Node {
+public class Node implements Serializable {
     public String name;
 
     @Override

@@ -1,0 +1,15 @@
+ADD: "\\+";
+SUB: "-";
+MUL: "\\*";
+LP: "\\(";
+RP: "\\)";
+NUM: "[0-9]+";
+
+start {Integer} -> sum { $0 };
+sum {Integer}-> mul {$0};
+sum {Integer} -> sum ADD mul {$0 + $2};
+sum {Integer} -> sum SUB mul {$0 - $2};
+mul {Integer} -> mul MUL num {$0 * $2};
+mul {Integer} -> num {$0};
+num {Integer} -> NUM {Integer.parseInt($0)};
+num {Integer} -> LP sum RP {$1};

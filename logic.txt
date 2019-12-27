@@ -1,0 +1,18 @@
+VAR: "[a-z]";
+AND: "\\&";
+XOR: "\\^";
+NOT: "\\!";
+LP: "\\(";
+RP: "\\)";
+OR: "\\|";
+
+start {Logic}-> or {$0};
+or {Logic} -> or OR xor {new Or($0, $2)};
+or {Logic} -> xor {$0};
+xor {Logic} -> xor XOR and {new Xor($0, $2)};
+xor {Logic} -> and {$0};
+and {Logic} -> and AND var {new And($0, $2)};
+and {Logic} -> var {$0};
+var {Logic} -> VAR {new Var()};
+var {Logic} -> NOT var {new Not($1)};
+var {Logic} -> LP or RP {$1};

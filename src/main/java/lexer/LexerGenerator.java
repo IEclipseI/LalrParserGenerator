@@ -15,52 +15,26 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class LexerGenerator {
-    public static void main(String[] args) {
-        String test = "bbbbaab";
-        Pattern pattern = Pattern.compile("^bb");
-        Matcher matcher = pattern.matcher(test);
-        if (matcher.find()) {
-            System.out.println(matcher.group());
-        }
-        LexerGenerator lexerGenerator = new LexerGenerator();
-        Queue<Node> tokens = lexerGenerator.tokens("x=*x");
-//        System.out.println("bba".);
-        generateLexer("Prim", List.of(
-                new Terminal("ARK", "*"),
-                new Terminal("EQ", "="),
-                new Terminal("X", "x")
-        ));
-    }
-
     @SneakyThrows
-    public static void generateLexer(String name, List<Terminal> terminals) {
-        String file = String.format(pattern, name, terms(terminals));
-        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter("test/Lexer" + name + ".java"));
+    public static void generateLexer(String name, List<Terminal> terminals, String pack) {
+        String file = String.format(pattern, pack, name, terms(terminals));
+        BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter("src/main/java/" + pack.replaceAll("\\.", "/") + "/Lexer" + name + ".java"));
         bufferedWriter.write(file);
         bufferedWriter.close();
     }
 
     private static String terms(List<Terminal> terminals) {
         StringBuilder res = new StringBuilder();
+        String tab = "        ";
         if (terminals.size() > 0) {
-            res.append("new Pair<>(\"").append(terminals.get(0).getName()).append("\", \"").append(terminals.get(0).getName()).append("\")");
+            res.append(tab).append("new Pair<>(\"").append(terminals.get(0).getName()).append("\", \"").append(terminals.get(0).getPattern()).append("\")");
         }
         for (int i = 1; i < terminals.size(); i++) {
-            res.append(",\n" + "new Pair<>(\"").append(terminals.get(i).getName()).append("\", \"").append(terminals.get(i).getName()).append("\")");
+            res.append(",\n").append(tab).append("new Pair<>(\"").append(terminals.get(i).getName()).append("\", \"").append(terminals.get(i).getPattern()).append("\")");
         }
         return res.toString();
     }
-    //EQ: "=";
-    //X: "x";
-    //ARK: "*";
-    //A: "a*";
-//
-    //start -> n;
-    //n -> v EQ e;
-    //n -> e;
-    //e -> v;
-    //v -> X;
-    //v -> ARK e;
+
     List<Pair<String, String>> terminals = List.of(
             new Pair<>("EQ", "="),
             new Pair<>("X", "x"),
@@ -116,8 +90,9 @@ public class LexerGenerator {
     }
 
     private static final String pattern =
+            "package %s;\n" +
                     "import lombok.Value;\n" +
-                    "import parser.node.Node;\n" +
+                    "import parser.node.TypedNode;\n" +
                     "import util.Pair;\n" +
                     "\n" +
                     "import java.util.ArrayDeque;\n" +
@@ -128,12 +103,11 @@ public class LexerGenerator {
                     "\n" +
                     "public class Lexer%s {\n" +
                     "    List<Pair<String, String>> terminals = List.of(\n" +
-                    "            %s\n" +
+                    "%s\n" +
                     "    );\n" +
                     "\n" +
-                    "    public Queue<Node> tokens(String input1) {\n" +
-                    "        Queue<Node> queue = new ArrayDeque<>();\n" +
-                    "        StringView input = new StringView(input1, 0, input1.length());\n" +
+                    "    public Queue<TypedNode> tokens(String input) {\n" +
+                    "        Queue<TypedNode> queue = new ArrayDeque<>();\n" +
                     "        int pos = 0;\n" +
                     "\n" +
                     "        while (input.length() != 0) {\n" +
@@ -142,18 +116,18 @@ public class LexerGenerator {
                     "                Matcher matcher = pattern.matcher(input);\n" +
                     "                if (matcher.find()) {\n" +
                     "                    pos = matcher.end();\n" +
-                    "                    queue.add(new Node(terminal.getKey()));\n" +
+                    "                    queue.add(new TypedNode(terminal.getKey(), matcher.group(), \"\"));\n" +
                     "                    break;\n" +
                     "                }\n" +
                     "            }\n" +
                     "            if (pos == 0) {\n" +
                     "                throw new IllegalArgumentException(\"mda\");\n" +
                     "            } else {\n" +
-                    "                input = new StringView(input.str, input.from + pos, input.str.length());\n" +
+                    "                input = input.substring(pos);\n" +
                     "            }\n" +
                     "            pos = 0;\n" +
                     "        }\n" +
-                    "        queue.add(new Node(\"END\"));\n" +
+                    "        queue.add(new TypedNode(\"END\", \"\", \"\"));\n" +
                     "        return queue;\n" +
                     "    }\n" +
                     "\n" +

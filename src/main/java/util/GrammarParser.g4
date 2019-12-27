@@ -9,9 +9,11 @@ terminals: terminal_def*;
 terminal_def:TERMINAL_NAME ':' REGEX ';';
 TERMINAL_NAME:[A-Z]([A-Z0-9]*);
 REGEX: '"' (~[\\"] | '\\' [\\"])* '"';
-WS: [ \t\r\n]+ -> skip;
 
 rules: start rul*;
-start: 'start' '->' RULE_NAME ';';
-rul:RULE_NAME '->' (TERMINAL_NAME | RULE_NAME)* ';';
+start: 'start' TEXT '->' RULE_NAME action ';';
+rul:RULE_NAME TEXT '->' (TERMINAL_NAME | RULE_NAME)* action';';
+action: TEXT;
 RULE_NAME: [a-z]([a-z0-9]*);
+TEXT: '{'.*?'}';
+WS: [ \t\r\n]+ -> skip;

@@ -1,11 +1,15 @@
 package parser;
 
+import lexer.LexerGenerator;
 import lombok.SneakyThrows;
+import lombok.Value;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import parser.action.*;
 import parser.node.Node;
 import parser.node.NumeratedNode;
+import parser.node.TypedNode;
 import parser.rule.ExtendedRule;
 import parser.rule.Rule;
 import util.GrammarParserLexer;
@@ -14,25 +18,25 @@ import util.GrammarParserParser.*;
 import util.Pair;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class Table {
-    @SneakyThrows
-    public static void main(String[] args) {
-        generate(CharStreams.fromFileName("input.txt"));
-    }
-
     public static int ids = 1;
 
     public static final Node EPS = new Node("EPS");
     public static final Node END = new Node("END");
 
-    public static Table generate(CharStream stream) {
+
+    public static Res generateTable(CharStream stream, String name, String pack) {
         GrammarParserLexer lexer = new GrammarParserLexer(stream);
         CommonTokenStream tokenStream = new CommonTokenStream(lexer);
         GrammarParserParser parser = new GrammarParserParser(tokenStream);
 
         List<Terminal> terminals = getTerminals(parser.terminals());
+        LexerGenerator.generateLexer(name, terminals, pack);
+
+
         List<Node> terminalsNodes = terminals.stream()
                 .map(t -> new Node(t.getName()))
                 .collect(Collectors.toList());
@@ -60,10 +64,53 @@ public class Table {
         Map<Node, Set<Node>> firstSets = firstSets(new HashSet<>(terminalsNodes), numeratedRules);
 
         Map<Node, Set<Node>> followSets = followSets(firstSets, numeratedRules, new HashSet<>(terminalsNodes));
-        mergeRules(numeratedRules, followSets);
+        Map<Rule, Set<Node>> mergedRules = mergeRules(numeratedRules, followSets);
 
+        Map<Pair<Integer, Node>, Action> table = new HashMap<>();
+        edges.forEach((k, v) -> {
+            if (terminalsNodes.contains(k.getValue())) {
+                table.put(new Pair<>(k.getKey().id, k.getValue()), new Shift(v.id));
+            } else {
+                table.put(new Pair<>(k.getKey().id, k.getValue()), new GoTo(v.id));
+            }
+//            table.put(new Pair<>(e.getKey().id, e.getValue()));
+        });
+        mergedRules.forEach((r, follow) -> {
+            for (Node node : follow) {
+                if (r.left.name.equals("start")) {
+                    table.put(new Pair<>(r.ind, node), new Accept());
+                } else {
+                    table.put(new Pair<>(r.ind, node), new Reduce(r.action, mapToInit(r, new HashSet<>(rules))));
+                }
+            }
+        });
 
-        return new Table();
+        Set<TypedNode> typedNodes = new HashSet<>();
+        mergedRules.forEach((r, s) -> {
+            typedNodes.add(new TypedNode(r.left.name, "", r.type));
+        });
+//        mergedRules.
+        return new Res(table, typedNodes, new HashSet<>(rules));
+    }
+
+    public static Rule mapToInit(Rule rule, Set<Rule> rules) {
+        return rules.stream().filter(r -> {
+            boolean equals = rule.left.name.equals(r.left.name);
+            if (r.right.size() != rule.right.size())
+                return false;
+            for (int i = 0; i < rule.right.size(); i++) {
+                if (!rule.right.get(i).name.equals(r.right.get(i).name))
+                    return false;
+            }
+            return equals;
+        }).findAny().get();
+    }
+
+    @Value
+    public static class Res {
+        public Map<Pair<Integer, Node>, Action> table;
+        public Set<TypedNode> nodes;
+        public Set<Rule> rules;
     }
 
     public static Map<Rule, Set<Node>> mergeRules(Set<Rule> rules, Map<Node, Set<Node>> followSets) {
@@ -72,22 +119,21 @@ public class Table {
             boolean added = false;
             for (List<Rule> group : res) {
                 boolean good = true;
-                for (Rule tmp : group) {
-                    if (tmp.left.name.equals(rule.left.name)) {
-                        if (tmp.right.size() == (rule.right.size())) {
-                            for (int i = 0; i < rule.right.size(); i++) {
-                                if (!rule.right.get(i).name.equals(tmp.right.get(i).name)) {
-                                    good = false;
-                                    break;
-                                }
+                Rule tmp = group.get(0);
+                if (tmp.left.name.equals(rule.left.name)) {
+                    if (tmp.right.size() == (rule.right.size())) {
+                        for (int i = 0; i < rule.right.size(); i++) {
+                            if (!rule.right.get(i).name.equals(tmp.right.get(i).name)) {
+                                good = false;
+                                break;
                             }
-                            if (good) {
-                                if (((NumeratedNode) tmp.right.get(tmp.right.size() - 1)).to
-                                        != ((NumeratedNode) rule.right.get(rule.right.size() - 1)).to) {
-                                    added = true;
-                                    group.add(rule);
-                                    break;
-                                }
+                        }
+                        if (good) {
+                            if (((NumeratedNode) tmp.right.get(tmp.right.size() - 1)).to
+                                    == ((NumeratedNode) rule.right.get(rule.right.size() - 1)).to) {
+                                added = true;
+                                group.add(rule);
+                                break;
                             }
                         }
                     }
@@ -96,8 +142,14 @@ public class Table {
             if (!added)
                 res.add(new ArrayList<>(List.of(rule)));
         }
-        List<Rule> merged = res.stream().map(l -> l.get(0)).collect(Collectors.toList());
-        return null;
+        Map<Rule, Set<Node>> mergedRulesAndFollow = new HashMap<>();
+        res.forEach(l -> {
+            Set<Node> mergedFollow = new HashSet<>();
+            l.get(0).ind = ((NumeratedNode) l.get(0).right.get(l.get(0).right.size() - 1)).to;
+            l.forEach(r -> mergedFollow.addAll(followSets.get(r.left)));
+            mergedRulesAndFollow.put(l.get(0), mergedFollow);
+        });
+        return mergedRulesAndFollow;
     }
 
     public static Map<Node, Set<Node>> followSets
@@ -191,7 +243,11 @@ public class Table {
                 .get();
         Node tmp = startRule.right.get(0);
         int to = edges.get(new Pair<>(sortedSets.get(0), tmp)).id;
-        Rule rule = new Rule(ruleId[0]++, new NumeratedNode(startRule.left.name, 0, -1), List.of(new NumeratedNode(tmp.name, 0, to)));
+        Rule rule = new Rule(ruleId[0]++,
+                new NumeratedNode(startRule.left.name, 0, -1),
+                List.of(new NumeratedNode(tmp.name, 0, to)),
+                startRule.action,
+                startRule.type);
 
         Set<Rule> newRules = new HashSet<>(Set.of(rule));
         for (ItemSet set : sortedSets) {
@@ -211,7 +267,7 @@ public class Table {
                             curSet = nextSet;
                             curInd++;
                         }
-                        newRules.add(new Rule(ruleId[0]++, newLeft, newRight));
+                        newRules.add(new Rule(ruleId[0]++, newLeft, newRight, r.action, r.type));
                     }
             );
 
@@ -271,17 +327,23 @@ public class Table {
     public static List<Rule> getRules(RulesContext ctx) {
         List<Rule> rules = new ArrayList<>();
         StartContext start = ctx.start();
+        String tmp = start.action().getText();
+        String type = start.getChild(1).getText();
         rules.add(new Rule(0, new Node(
                 start.children.get(0).getText()),
-                List.of(new Node(start.getChild(2).getText()))));
+                List.of(new Node(start.getChild(3).getText())),
+                tmp.substring(1, tmp.length() - 1),
+                type.substring(1, type.length() - 1)));
         for (int i = 0; i < ctx.rul().size(); i++) {
             RulContext rul = ctx.rul(i);
             Node left = new Node(rul.getChild(0).getText());
             List<Node> right = new ArrayList<>();
-            for (int j = 2; j < rul.children.size() - 1; j++) {
+            for (int j = 3; j < rul.children.size() - 2; j++) {
                 right.add(new Node(rul.getChild(j).getText()));
             }
-            rules.add(new Rule(i + 1, left, right));
+            String text = rul.action().getText();
+            String s = rul.TEXT().toString();
+            rules.add(new Rule(i + 1, left, right, text.substring(1, text.length() - 1), s.substring(1, s.length() - 1)));
         }
         for (Rule rule : rules) {
             System.out.println(rule);
@@ -296,8 +358,8 @@ public class Table {
             String name = terminal.children.get(0).getText();
 
             String pattern = terminal.children.get(2).getText();
-            pattern = pattern.replaceAll("\\\\\"", "\"");
-            pattern = pattern.replaceAll("\\\\\\\\", "\\\\");
+//            pattern = pattern.replaceAll("\\\\\"", "\"");
+//            pattern = pattern.replaceAll("\\\\\\\\", "\\\\");
             pattern = pattern.substring(1, pattern.length() - 1);
 
             terminals.add(new Terminal(name, pattern));
