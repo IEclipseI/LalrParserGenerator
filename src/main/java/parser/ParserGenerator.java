@@ -9,7 +9,6 @@ import parser.node.Node;
 import parser.node.TypedNode;
 import parser.rule.Rule;
 import util.Pair;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -87,51 +86,6 @@ public class ParserGenerator {
                     "       return %s;\n" +
                     "}\n";
 
-    static String fileTemplate = "package example;\n" +
-            "public class Parser%s {\n" +
-            "%s" +
-            "public static String map = \"%s\";\n" +
-            " @SneakyThrows\n" +
-            "    private static Object deserialize(String s) {\n" +
-            "        byte[] data = Base64.getDecoder().decode(s);\n" +
-            "        ObjectInputStream ois = new ObjectInputStream(\n" +
-            "                new ByteArrayInputStream(data));\n" +
-            "        Object o = ois.readObject();\n" +
-            "        ois.close();\n" +
-            "        return o;\n" +
-            "    }\n" +
-            "public static Map<Pair<Integer, Node>, Action> example = ((Map<Pair<Integer, Node>, Action>)deserialize(map);\n" +
-            "%s" +
-            "}";
-
-    static String parseTemplate =
-            "public static %s parse(String input) {\n" +
-                    "Queue<TypedNode> tokens = lexer.tokens(input);\n" +
-                    "        int curState = 0;\n" +
-                    "        Deque<Integer> state = new ArrayDeque<>();\n" +
-                    "        Deque<Object> stack = new ArrayDeque<>();\n" +
-                    "        state.addFirst(0);\n" +
-                    "        while (!(example.get(new Pair<>(state.peekFirst(), tokens.peek())) instanceof Accept)) {\n" +
-                    "            Action action = example.get(new Pair<>(state.peekFirst(), tokens.peek()));\n" +
-                    "            if (action instanceof Shift) {\n" +
-                    "                state.addFirst(((Shift) action).getTo());\n" +
-                    "                stack.addFirst(tokens.poll().value);\n" +
-                    "            } else if (action instanceof Reduce) {\n" +
-                    "                Reduce reduce = (Reduce) action;\n" +
-                    "                List<Object> arg = new ArrayList<>();\n" +
-                    "                for (int i = 0; i < reduce.getRule().right.size(); i++) {\n" +
-                    "                    arg.add(stack.pollFirst());\n" +
-                    "                    state.removeFirst();\n" +
-                    "                }\n" +
-                    "                Collections.reverse(arg);\n" +
-                    "                Rule rule = reduce.getRule();\n" +
-                    "                int ind = rule.ind;\n" +
-                    "                state.addFirst(((GoTo) example.get(new Pair<>(state.peekFirst(), rule.left))).getTo());\n" +
-                    "                stack.addFirst(f.get(ind).apply(arg));\n" +
-                    "\n" +
-                    "            }" +
-                    "}\n";
-
     private static final String pattern =
             "package %s;\n" +
                     "\n" +
@@ -172,6 +126,9 @@ public class ParserGenerator {
                     "        state.addFirst(0);\n" +
                     "        while (!(example.get(new Pair<>(state.peekFirst(), tokens.peek())) instanceof Accept)) {\n" +
                     "            Action action = example.get(new Pair<>(state.peekFirst(), tokens.peek()));\n" +
+                    "            if (action == null)\n" +
+                    "                throw new UnsupportedOperationException(\"Grammar possibly is not LALR(1)\");\n" +
+                    "            "+
                     "            if (action instanceof Shift) {\n" +
                     "                state.addFirst(((Shift) action).getTo());\n" +
                     "                stack.addFirst(tokens.poll().value);\n" +

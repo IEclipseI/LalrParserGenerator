@@ -1,4 +1,4 @@
-package example.add;
+package example.non;
 import lombok.Value;
 import parser.node.TypedNode;
 import util.Pair;
@@ -9,15 +9,11 @@ import java.util.Queue;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class LexerAdd {
+public class LexerNon {
     List<Pair<String, String>> terminals = List.of(
-        new Pair<>("ADD", "\\+"),
-        new Pair<>("SUB", "-"),
-        new Pair<>("MUL", "\\*"),
-        new Pair<>("LP", "\\("),
-        new Pair<>("RP", "\\)"),
-        new Pair<>("NUM", "[0-9]+"),
-        new Pair<>("POW", "\\^")
+        new Pair<>("A", "a"),
+        new Pair<>("B", "b"),
+        new Pair<>("E", "e")
     );
 
     public Queue<TypedNode> tokens(String input) {

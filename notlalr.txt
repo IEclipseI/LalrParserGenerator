@@ -1,0 +1,11 @@
+A:"a";
+B:"b";
+E:"e";
+
+start {String} -> s{$0};
+s {String}-> AeA {"a" + $1 + "a"};
+s {String}-> BeB {"b" + $1 + "b"};
+s {String}-> AfB {"a" + $1 + "b"};
+s {String}-> BfA {"b" + $1 + "a"};
+e {String}-> E {"e"};
+f {String}-> E {"e"};

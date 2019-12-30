@@ -35,7 +35,7 @@ public class LexerLogic {
                 }
             }
             if (pos == 0) {
-                throw new IllegalArgumentException("mda");
+                throw new IllegalArgumentException("Doesn't match grammar");
             } else {
                 input = input.substring(pos);
             }

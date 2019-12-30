@@ -3,16 +3,10 @@ package lexer;
 import lombok.SneakyThrows;
 import lombok.Value;
 import parser.Terminal;
-import parser.node.Node;
-import util.Pair;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.util.ArrayDeque;
 import java.util.List;
-import java.util.Queue;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class LexerGenerator {
     @SneakyThrows
@@ -33,38 +27,6 @@ public class LexerGenerator {
             res.append(",\n").append(tab).append("new Pair<>(\"").append(terminals.get(i).getName()).append("\", \"").append(terminals.get(i).getPattern()).append("\")");
         }
         return res.toString();
-    }
-
-    List<Pair<String, String>> terminals = List.of(
-            new Pair<>("EQ", "="),
-            new Pair<>("X", "x"),
-            new Pair<>("ARK", "\\*")
-    );
-
-    public Queue<Node> tokens(String input1) {
-        Queue<Node> queue = new ArrayDeque<>();
-        StringView input = new StringView(input1, 0, input1.length());
-        int pos = 0;
-
-        while (input.length() != 0) {
-            for (Pair<String, String> terminal : terminals) {
-                Pattern pattern = Pattern.compile("^" + terminal.getValue());
-                Matcher matcher = pattern.matcher(input);
-                if (matcher.find()) {
-                    pos = matcher.end();
-                    queue.add(new Node(terminal.getKey()));
-                    break;
-                }
-            }
-            if (pos == 0) {
-                throw new IllegalArgumentException("mda");
-            } else {
-                input = new StringView(input.str, input.from + pos, input.str.length());
-            }
-            pos = 0;
-        }
-        queue.add(new Node("END"));
-        return queue;
     }
 
     @Value
@@ -121,7 +83,7 @@ public class LexerGenerator {
                     "                }\n" +
                     "            }\n" +
                     "            if (pos == 0) {\n" +
-                    "                throw new IllegalArgumentException(\"mda\");\n" +
+                    "                throw new IllegalArgumentException(\"Doesn't match grammar\");\n" +
                     "            } else {\n" +
                     "                input = input.substring(pos);\n" +
                     "            }\n" +
